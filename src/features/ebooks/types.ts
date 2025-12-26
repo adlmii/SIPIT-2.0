@@ -1,16 +1,17 @@
-export type EbookStatus = 'published' | 'draft' | 'archived';
+import { EBOOK_STATUS } from '../../lib/constants';
+
+export type EbookStatus = (typeof EBOOK_STATUS)[keyof typeof EBOOK_STATUS];
 
 export interface Ebook {
   id: string;
   title: string;
   author: string;
   category: string;
-  publishDate: string; // ISO String
   status: EbookStatus;
   downloads: number;
+  publishDate: string;
 }
 
-// Tipe untuk Filter State
 export interface EbookFilters {
   search: string;
   category: string;

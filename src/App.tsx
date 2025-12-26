@@ -1,18 +1,9 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { Toaster } from 'sonner'; // 1. Import Toaster
+import { Toaster } from 'sonner';
 import Layout from './components/layout/Layout';
-
 import DashboardPage from './features/dashboard';
 import EbooksPage from './features/ebooks';
-
-// --- Placeholders ---
-const UsersPage = () => (
-  <div className="flex h-[60vh] flex-col items-center justify-center text-center">
-    <div className="rounded-full bg-slate-100 p-6"><span className="text-4xl">🚧</span></div>
-    <h2 className="mt-4 text-xl font-bold text-slate-700">User Management</h2>
-    <p className="text-slate-500">Fitur ini sedang dalam pengembangan.</p>
-  </div>
-);
+import UsersPage from './features/users';
 
 const NotFoundPage = () => (
   <div className="flex h-[60vh] flex-col items-center justify-center text-center">
@@ -25,8 +16,6 @@ const NotFoundPage = () => (
 function App() {
   return (
     <BrowserRouter>
-      {/* 2. Pasang Component Toaster Global disini */}
-      {/* 'richColors' membuat notifikasi sukses jadi hijau, error jadi merah */}
       <Toaster position="top-right" richColors closeButton />
       
       <Routes>

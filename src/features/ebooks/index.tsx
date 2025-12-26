@@ -7,12 +7,10 @@ import { EbookTable } from './components/EbookTable';
 import { Modal } from '../../components/ui/Modal';
 import { EbookForm, type EbookFormData } from './components/EbookForm'; 
 import type { Ebook } from './types';
-import { useEbookStore } from '../../stores/useEbookStore';
+import { EBOOK_STATUS, EBOOK_CATEGORIES } from '../../lib/constants';
 
 const EbooksPage = () => {
   // --- STATE ---
-  const { addEbook, updateEbook, deleteEbook } = useEbookStore();
-
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
   
@@ -27,8 +25,10 @@ const EbooksPage = () => {
     limit: 5,
   });
 
-  const { data, isLoading } = useEbooks(filters);
+  // --- HOOK ---
+  const { data, isLoading, totalData, addEbook, updateEbook, deleteEbook } = useEbooks(filters);
 
+  // --- EFFECT ---
   useEffect(() => {
     setFilters((prev) => ({ ...prev, search: debouncedSearch, page: 1 }));
   }, [debouncedSearch]);
@@ -37,44 +37,51 @@ const EbooksPage = () => {
   // --- HANDLERS ---
 
   const handleFormSubmit = async (formData: EbookFormData) => {
-    const savePromise = new Promise((resolve) => setTimeout(resolve, 1000));
-    
-    toast.promise(savePromise, {
-      loading: 'Menyimpan perubahan...',
-      success: () => {
-        if (selectedEbook) {
-          // MODE EDIT: Update data yang ada
-          updateEbook(selectedEbook.id, formData);
-          return `Berhasil memperbarui "${formData.title}"`;
-        } else {
-          // MODE CREATE: Tambah data baru
-          addEbook(formData);
-          return `Berhasil menambahkan "${formData.title}"`;
-        }
-        setIsModalOpen(false);
-      },
-      error: 'Gagal menyimpan data.',
-    });
+    // Logic API Call
+    const actionPromise = async () => {
+      let success = false;
+      
+      if (selectedEbook) {
+        success = await updateEbook(selectedEbook.id, formData);
+      } else {
+        success = await addEbook(formData);
+      }
 
-    await savePromise;
-    setIsModalOpen(false);
+      if (!success) throw new Error("Gagal menyimpan data.");
+      return selectedEbook ? `Buku diperbarui` : `Buku ditambahkan`;
+    };
+
+    // 1. FIX UTAMA: Gunakan try-catch dan await
+    // Form akan tetap dalam status 'isSubmitting' sampai promise ini selesai
+    try {
+      await toast.promise(actionPromise(), {
+        loading: 'Menghubungkan ke server...',
+        success: (msg) => {
+          setIsModalOpen(false); // Tutup modal hanya jika sukses
+          return msg;
+        },
+        error: 'Gagal menyimpan data.',
+      });
+    } catch (error) {
+      console.error(error);
+      // Jika error, modal TETAP TERBUKA agar user bisa coba lagi
+    }
   };
 
   const handleDelete = (id: string) => {
-    toast("Apakah Anda yakin ingin menghapus?", {
-      description: "Data ini tidak dapat dikembalikan.",
+    toast("Hapus data buku ini?", {
+      description: "Data akan dihapus permanen.",
       action: {
         label: "Hapus",
-        onClick: () => {
-          // PANGGIL ACTION DELETE DARI STORE
-          deleteEbook(id); 
-          toast.success("Data berhasil dihapus.");
+        onClick: async () => {
+          const success = await deleteEbook(id);
+          if (success) toast.success("Data berhasil dihapus.");
         },
       },
       cancel: { label: "Batal", onClick: () => {} },
     });
   };
-  
+
   const handleEdit = (id: string) => {
     const ebookToEdit = data.find((item) => item.id === id);
     if (!ebookToEdit) {
@@ -88,11 +95,12 @@ const EbooksPage = () => {
   const handleOpenCreateModal = () => { setSelectedEbook(null); setIsModalOpen(true); };
   const handleCloseModal = () => { setIsModalOpen(false); setSelectedEbook(null); };
 
+  // Filter Helpers
   const handleSearchInput = (e: React.ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value);
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => setFilters(prev => ({...prev, category: e.target.value, page: 1}));
   const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => setFilters(prev => ({...prev, status: e.target.value, page: 1}));
 
-  // Styles Helpers
+  // Style Helpers
   const filterWrapperClass = "relative min-w-[180px]";
   const selectClass = "w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-10 text-sm font-medium text-slate-600 hover:border-indigo-300 focus:border-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 transition-all cursor-pointer";
   const iconLeftClass = "absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none";
@@ -133,9 +141,9 @@ const EbooksPage = () => {
               <Layers className={iconLeftClass} size={16} />
               <select className={selectClass} value={filters.category} onChange={handleCategoryChange}>
                 <option value="All">Semua Kategori</option>
-                <option value="Development">Development</option>
-                <option value="Design">Design</option>
-                <option value="Software Engineering">Software Engineering</option>
+                <option value={EBOOK_CATEGORIES.DEVELOPMENT}>Development</option>
+                <option value={EBOOK_CATEGORIES.DESIGN}>Design</option>
+                <option value={EBOOK_CATEGORIES.SOFTWARE_ENGINEERING}>Software Eng.</option>
               </select>
               <ChevronDown className={iconChevronClass} size={14} />
             </div>
@@ -143,8 +151,9 @@ const EbooksPage = () => {
               <CheckCircle2 className={iconLeftClass} size={16} />
               <select className={selectClass} value={filters.status} onChange={handleStatusChange}>
                 <option value="All">Semua Status</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
+                <option value={EBOOK_STATUS.PUBLISHED}>Published</option>
+                <option value={EBOOK_STATUS.DRAFT}>Draft</option>
+                <option value={EBOOK_STATUS.ARCHIVED}>Archived</option>
               </select>
               <ChevronDown className={iconChevronClass} size={14} />
             </div>
@@ -163,7 +172,7 @@ const EbooksPage = () => {
       {/* PAGINATION */}
       {!isLoading && (
         <div className="flex items-center justify-between text-sm text-slate-500 px-1">
-          <span>Menampilkan {data.length} data</span>
+          <span>Menampilkan {data.length} dari {totalData} data</span>
           <div className="flex gap-2">
             <button 
               disabled={filters.page === 1}
@@ -174,8 +183,9 @@ const EbooksPage = () => {
             </button>
             <span className="rounded-lg bg-indigo-50 px-3 py-1.5 font-medium text-indigo-700">Page {filters.page}</span>
             <button 
+              disabled={filters.page * filters.limit >= totalData} 
               onClick={() => setFilters(prev => ({...prev, page: prev.page + 1}))}
-              className="rounded-lg px-3 py-1.5 border border-slate-200 hover:bg-white hover:text-indigo-600 transition-colors"
+              className="rounded-lg px-3 py-1.5 border border-slate-200 hover:bg-white hover:text-indigo-600 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
             >
               Next
             </button>

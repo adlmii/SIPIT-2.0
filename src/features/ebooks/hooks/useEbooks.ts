@@ -1,57 +1,100 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Ebook, EbookFilters } from '../types';
-import { useEbookStore } from '../../../stores/useEbookStore';
+import { mockApi } from '../../../services/mockApi';
+import { toast } from 'sonner';
+import type { EbookFormData } from '../components/EbookForm';
 
 export const useEbooks = (filters: EbookFilters) => {
-  // Ambil data 'real' dari Store
-  const { ebooks: sourceData } = useEbookStore();
-  
   const [data, setData] = useState<Ebook[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [totalData, setTotalData] = useState(0);
 
-  useEffect(() => {
-    const fetchEbooks = async () => {
-      setIsLoading(true);
-
-      // 1. Simulasi Network Delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // 2. Logika Filtering (Sekarang pakai sourceData dari store)
-      let result = [...sourceData];
-
-      // Filter Search
+  // 1. Fetching Logic
+  const fetchEbooks = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const result = await mockApi.ebooks.getAll();
+      
+      // Filter Logic
+      let filtered = result;
       if (filters.search) {
-        const query = filters.search.toLowerCase();
-        result = result.filter(item => 
-          item.title.toLowerCase().includes(query) || 
-          item.author.toLowerCase().includes(query)
+        const q = filters.search.toLowerCase();
+        filtered = filtered.filter(item => 
+          item.title.toLowerCase().includes(q) || item.author.toLowerCase().includes(q)
         );
       }
-
-      // Filter Category
       if (filters.category && filters.category !== 'All') {
-        result = result.filter(item => item.category === filters.category);
+        filtered = filtered.filter(item => item.category === filters.category);
       }
-
-      // Filter Status
       if (filters.status && filters.status !== 'All') {
-        result = result.filter(item => item.status === filters.status);
+        filtered = filtered.filter(item => item.status === filters.status);
       }
 
-      // 3. Pagination Logic
-      setTotalData(result.length);
+      // Pagination Logic
+      setTotalData(filtered.length);
       const startIndex = (filters.page - 1) * filters.limit;
-      const paginatedResult = result.slice(startIndex, startIndex + filters.limit);
+      const endIndex = startIndex + filters.limit;
+      const paginatedData = filtered.slice(startIndex, endIndex);
 
-      setData(paginatedResult);
+      setData(paginatedData);
+
+    } catch (err) {
+      setError("Gagal mengambil data ebook");
+      toast.error("Terjadi kesalahan server");
+    } finally {
       setIsLoading(false);
-    };
+    }
+  }, [filters]); 
 
+  // Initial Load
+  useEffect(() => {
     fetchEbooks();
-    
-    // Tambahkan dependency 'sourceData' agar saat data berubah (CRUD), tabel auto-refresh
-  }, [filters, sourceData]); 
+  }, [fetchEbooks]);
 
-  return { data, isLoading, totalData };
+  // --- 2. ACTIONS  ---
+  
+  const addEbook = async (formData: EbookFormData) => {
+    try {
+      await mockApi.ebooks.create(formData); 
+      fetchEbooks();
+      return true;
+    } catch (e) {
+      toast.error("Gagal menambah buku");
+      return false;
+    }
+  };
+
+  const updateEbook = async (id: string, formData: Partial<Ebook>) => {
+    try {
+      await mockApi.ebooks.update(id, formData);
+      fetchEbooks();
+      return true;
+    } catch (e) {
+      toast.error("Gagal update buku");
+      return false;
+    }
+  };
+
+  const deleteEbook = async (id: string) => {
+    try {
+      await mockApi.ebooks.delete(id);
+      fetchEbooks();
+      return true;
+    } catch (e) {
+      toast.error("Gagal menghapus buku");
+      return false;
+    }
+  };
+
+  return { 
+    data, 
+    isLoading, 
+    error, 
+    totalData, 
+    addEbook,
+    updateEbook,
+    deleteEbook
+  };
 };

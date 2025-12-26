@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware'; // 1. Import Middleware
-
-export type UserRole = 'super_admin' | 'viewer';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { USER_ROLES } from '../lib/constants';
+import type { UserRole } from '../features/users/types';
 
 interface User {
   id: string;
@@ -19,19 +19,21 @@ interface AuthState {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
+      // INITIAL STATE
       user: {
         id: 'u-1',
-        name: 'Admin EBook',
-        role: 'super_admin',
-        avatar: 'AE'
+        name: 'Admin Ganteng',
+        role: USER_ROLES.SUPER_ADMIN,
+        avatar: 'AG'
       },
       
+      // ACTIONS
       login: (role) => set({
         user: {
           id: 'u-1',
-          name: role === 'super_admin' ? 'Admin EBook' : 'Pengunjung',
+          name: role === USER_ROLES.SUPER_ADMIN ? 'Admin Ganteng' : 'Pengunjung',
           role: role,
-          avatar: role === 'super_admin' ? 'AE' : 'VP'
+          avatar: role === USER_ROLES.SUPER_ADMIN ? 'AG' : 'VP'
         }
       }),
 
