@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useState } from 'react';
 import { Plus, Search, Shield } from 'lucide-react'; 
 import { toast } from 'sonner';
@@ -9,16 +10,16 @@ import { UserForm } from './components/UserForm';
 import type { User, UserFormData } from './types';
 
 const UsersPage = () => {
+  useDocumentTitle('User Management');
   // State UI
   const [searchTerm, setSearchTerm] = useState('');
-  const debouncedSearch = useDebounce(searchTerm, 500); // Debounce biar gak spam API
+  const debouncedSearch = useDebounce(searchTerm, 500);
   const [filterRole, setFilterRole] = useState('All');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  // 2. GUNAKAN CUSTOM HOOK
-  // Filter logic sudah terjadi di dalam hook ini (via Mock API)
+  // --- CUSTOM HOOK ---
   const { users, isLoading, addUser, updateUser, deleteUser } = useUsers(debouncedSearch, filterRole);
 
   // --- HANDLERS ---
@@ -63,8 +64,6 @@ const UsersPage = () => {
   };
   const handleCreate = () => { setSelectedUser(null); setIsModalOpen(true); };
   const handleClose = () => { setIsModalOpen(false); setSelectedUser(null); };
-
-  // Styling Helpers
   const wrapperClass = "relative min-w-[180px]";
   const selectClass = "w-full appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm font-medium text-slate-600 hover:border-indigo-300 focus:border-indigo-500 focus:outline-none transition-all cursor-pointer";
 
@@ -107,7 +106,6 @@ const UsersPage = () => {
       </div>
 
       {/* TABLE */}
-      {/* isLoading diteruskan ke UserTable untuk menampilkan skeleton jika perlu (opsional) */}
       <UserTable 
         data={users} 
         isLoading={isLoading} 

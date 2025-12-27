@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { useState, useEffect } from 'react';
 import { Plus, Search, Layers, CheckCircle2, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,10 +11,10 @@ import type { Ebook } from './types';
 import { EBOOK_STATUS, EBOOK_CATEGORIES } from '../../lib/constants';
 
 const EbooksPage = () => {
+  useDocumentTitle('E-Book Management');
   // --- STATE ---
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
-  
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedEbook, setSelectedEbook] = useState<Ebook | null>(null);
 
@@ -51,8 +52,6 @@ const EbooksPage = () => {
       return selectedEbook ? `Buku diperbarui` : `Buku ditambahkan`;
     };
 
-    // 1. FIX UTAMA: Gunakan try-catch dan await
-    // Form akan tetap dalam status 'isSubmitting' sampai promise ini selesai
     try {
       await toast.promise(actionPromise(), {
         loading: 'Menghubungkan ke server...',
@@ -64,7 +63,6 @@ const EbooksPage = () => {
       });
     } catch (error) {
       console.error(error);
-      // Jika error, modal TETAP TERBUKA agar user bisa coba lagi
     }
   };
 

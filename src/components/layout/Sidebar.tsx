@@ -18,7 +18,6 @@ const Sidebar = () => {
   ];
 
   const handleSwitchRole = () => {
-    // 2. LOGIC SWITCH ROLE PAKAI CONSTANTS
     const newRole: UserRole = user?.role === USER_ROLES.SUPER_ADMIN 
       ? USER_ROLES.VIEWER 
       : USER_ROLES.SUPER_ADMIN;
@@ -34,13 +33,14 @@ const Sidebar = () => {
         isSidebarOpen ? "w-72" : "w-20"
       )}
     >
-      {/* ... (LOGO & NAV SAMA SEPERTI SEBELUMNYA) ... */}
       
       <div className="flex h-20 items-center justify-center border-b border-slate-800/50">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-tr from-indigo-600 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
-            <BookOpen size={20} strokeWidth={2.5} />
-          </div>
+            <img 
+              src="/logo_sipit.png" 
+              alt="SIPIT Logo" 
+              className="h-10 w-10 rounded-xl object-cover shadow-lg shadow-indigo-500/30" 
+            />
           <div className={cn("transition-all duration-300 overflow-hidden", !isSidebarOpen && "w-0 opacity-0 hidden")}>
             <h1 className="font-bold text-lg text-white tracking-tight">SIPIT 2.0</h1>
             <p className="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Admin Panel</p>

@@ -1,3 +1,4 @@
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import { BookOpen, Download, Users, TrendingUp } from 'lucide-react';
 import { StatCard } from './components/StatCard';
 import { TrendChart } from './components/TrendChart';
@@ -10,6 +11,7 @@ const recentActivities = [
 ];
 
 const DashboardPage = () => {
+  useDocumentTitle('Dashboard');
   return (
     <div className="space-y-6">
       {/* Header Section */}
